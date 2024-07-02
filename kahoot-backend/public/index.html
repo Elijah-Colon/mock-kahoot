@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css"
+    />
+    <link rel="stylesheet" href="style.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;0,900;1,300;1,400;1,700;1,900&display=swap"
+      rel="stylesheet"
+    />
+
+    <title>Document</title>
+  </head>
+  <body>
+    <div id="miau">
+      <nav>
+        <h1>Kahoot!</h1>
+        <p v-if="currentUser">Welcome, {{ currentUser.name }}</p>
+        <button
+          class="logout-button"
+          v-if="currentUser"
+          @click="deleteSession()"
+        >
+          LogOut
+        </button>
+      </nav>
+      <div v-if="currentPage == 'login'">
+        <form @submit.prevent="loginUser()">
+          <div class="input-container">
+            <p class="label">Email</p>
+            <input type="email" v-model="user.email" />
+          </div>
+          <div class="input-container">
+            <p class="label">Password</p>
+            <input type="password" v-model="user.password" />
+          </div>
+          <button>Log in</button>
+          <p>
+            Don't have an account?
+            <span @click="setPage('register')">Sign up</span>
+          </p>
+        </form>
+      </div>
+
+      <div v-if="currentPage == 'register'">
+        <form @submit.prevent="registerUser()">
+          <div class="input-container">
+            <p class="label">Name</p>
+            <input type="text" v-model="user.name" />
+          </div>
+          <div class="input-container">
+            <p class="label">Email</p>
+            <input type="email" v-model="user.email" />
+          </div>
+          <div class="input-container">
+            <p class="label">Password</p>
+            <input type="password" v-model="user.password" />
+          </div>
+          <button>register</button>
+          <p>
+            Don't have an account? <span @click="setPage('login')">Login</span>
+          </p>
+        </form>
+      </div>
+
+      <div v-if="currentPage === 'quizzes'">
+        <div id="quiz-screen">
+          <h1>Quizzes</h1>
+          <button id="create-button" @click="setPage('createQuiz')">+</button>
+        </div>
+        <div id="quiz-container">
+          <div
+            class="quizzes"
+            v-for="quiz in quizzes"
+            @click="startQuiz(quiz._id)"
+          >
+            <h3>{{ quiz.title }}</h3>
+            <p>{{ quiz.description }}</p>
+            <div>
+              <button
+                v-if="quiz.owner === currentUser.userID"
+                @click.stop="editQuiz(quiz)"
+              >
+                Edit
+              </button>
+              <button
+                class="logout-button"
+                v-if="quiz.owner === currentUser.userID"
+                @click.stop="deleteQuiz(quiz._id)"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div v-if="currentPage === 'createQuiz'">
+        <button @click="setPage('quizzes'); clearQuiz()">Back</button>
+        <h1>Create Quiz</h1>
+        <p>Title</p>
+        <input type="text" placeholder="Title..." v-model="newQuiz.title" />
+        <p>Description</p>
+        <input
+          type="text"
+          placeholder="Description..."
+          v-model="newQuiz.description"
+        />
+        <div v-for="(question, index) in newQuestions">
+          <p>Question</p>
+          <input
+            type="text"
+            placeholder="Question..."
+            v-model="question.questionText"
+          />
+
+          <div v-for="answer in question.possibleChoices">
+            <p>Answer</p>
+            <input
+              type="text"
+              placeholder="Answer..."
+              v-model="answer.answerText"
+            />
+            <select v-model="answer.isCorrect">
+              <option value="false">False</option>
+              <option value="true">True</option>
+            </select>
+          </div>
+
+          <button @click="addAnswer(index)">Add Answer</button>
+        </div>
+
+        <button @click="addQuestion()">Add Question</button>
+        <button @click="createQuiz()" v-if="!editingQuiz">Create Quiz</button>
+        <button @click="saveQuiz()" v-if="editingQuiz">Save Quiz</button>
+      </div>
+
+      <div v-if="currentPage === 'singleQuiz'">
+        <button @click="setPage('quizzes'); clearQuiz()">Back</button>
+        <h1>{{ currentQuiz.questions[currentQuizQuestion].questionText }}</h1>
+        <div
+          v-for="answer in currentQuiz.questions[currentQuizQuestion].possibleChoices"
+        >
+          <button @click="answerQuestion(answer)">
+            {{ answer.answerText }}
+          </button>
+        </div>
+        <div>
+          <button
+            @click="nextQuestion()"
+            v-if="currentQuizQuestion < currentQuiz.questions.length"
+          >
+            Next
+          </button>
+          <p>
+            Score: {{currentQuizTotalScore}} / {{currentQuiz.questions.length}}
+          </p>
+        </div>
+      </div>
+
+      <div v-if="currentPage === 'loading'"></div>
+    </div>
+    <script src="app.js"></script>
+  </body>
+</html>
